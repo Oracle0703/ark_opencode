@@ -1,0 +1,5 @@
+dist/
+.gocache/
+*.tmp
+*.bak-*
+node_modules/
