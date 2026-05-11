@@ -16,6 +16,7 @@ const {
   backupExisting,
   atomicWrite,
   sanitizePathForLog,
+  apiKeyPromptText,
 } = require('./setup-opencode');
 
 function makeTemplate() {
@@ -131,6 +132,13 @@ test('atomicWrite writes content and removes temp files', () => {
 
 test('sanitizePathForLog removes control characters', () => {
   assert.equal(sanitizePathForLog('abc\u001b[31mdef'), 'abc[31mdef');
+});
+
+test('apiKeyPromptText clearly tells users input is hidden and waiting', () => {
+  const text = apiKeyPromptText();
+  assert.match(text, /请输入你的火山订阅专属 API key/);
+  assert.match(text, /输入内容不会显示/);
+  assert.match(text, /按回车继续/);
 });
 
 test('CLI rejects Node versions below 22', { skip: Number(process.versions.node.split('.')[0]) >= 22 }, () => {

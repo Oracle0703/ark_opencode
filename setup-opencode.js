@@ -386,6 +386,16 @@ function readApiKeyFromEnv(opts) {
   return result.value;
 }
 
+function apiKeyPromptText() {
+  return [
+    '',
+    '请输入你的火山订阅专属 API key。',
+    '安全提示：输入内容不会显示在终端中，这是正常现象。',
+    '粘贴或输入完成后，请按回车继续。',
+    'API key：',
+  ].join('\n');
+}
+
 function promptApiKey() {
   if (!process.stdin.isTTY) {
     throw Object.assign(new Error('当前输入不是 TTY，请通过 ARK_API_KEY 环境变量提供 API key。'), { exitCode: EXIT.API_KEY });
@@ -396,7 +406,7 @@ function promptApiKey() {
     const originalWrite = rl._writeToOutput;
     rl._writeToOutput = function writeMasked() {};
     const ask = () => {
-      process.stderr.write('请输入你的火山订阅专属 API key：');
+      process.stderr.write(apiKeyPromptText());
       rl.question('', (answer) => {
         process.stderr.write('\n');
         const result = validateApiKey(answer);
@@ -511,6 +521,7 @@ module.exports = {
   backupExisting,
   atomicWrite,
   sanitizePathForLog,
+  apiKeyPromptText,
   loadTemplate,
   findOnPath,
   main,
