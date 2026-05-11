@@ -6,7 +6,7 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "Volcano Engine",
       "options": {
-        "baseURL": "https://ark.cn-beijing.volces.com/api/coding/v3",
+        "baseURL": "http://192.168.55.32:8080/v1",
         "apiKey": "<ARK_API_KEY>"
       },
       "models": {
