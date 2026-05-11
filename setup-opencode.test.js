@@ -17,6 +17,7 @@ const {
   atomicWrite,
   sanitizePathForLog,
   apiKeyPromptText,
+  loadTemplate,
 } = require('./setup-opencode');
 
 function makeTemplate() {
@@ -139,6 +140,13 @@ test('apiKeyPromptText clearly tells users input is hidden and waiting', () => {
   assert.match(text, /请输入你的火山订阅专属 API key/);
   assert.match(text, /输入内容不会显示/);
   assert.match(text, /按回车继续/);
+});
+
+test('loadTemplate falls back to embedded template when file is missing', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-no-template-'));
+  const template = loadTemplate(tmp);
+  assert.equal(template.provider['volcengine-plan'].options.apiKey, '<ARK_API_KEY>');
+  assert.equal(template.provider['volcengine-plan'].options.baseURL, 'https://ark.cn-beijing.volces.com/api/coding/v3');
 });
 
 test('CLI rejects Node versions below 22', { skip: Number(process.versions.node.split('.')[0]) >= 22 }, () => {
