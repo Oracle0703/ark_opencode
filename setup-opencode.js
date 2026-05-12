@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-'use strict';
+"use strict";
 
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const crypto = require('node:crypto');
-const readline = require('node:readline');
-const { spawn } = require('node:child_process');
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const crypto = require("node:crypto");
+const readline = require("node:readline");
+const { spawn } = require("node:child_process");
 
-const VERSION = '0.1.0';
+const VERSION = "0.1.0";
 const EXIT = {
   GENERAL: 1,
   RUNTIME: 2,
@@ -29,7 +29,7 @@ const EMBEDDED_TEMPLATE_JSON = String.raw`{
       "npm": "@ai-sdk/openai-compatible",
       "name": "Volcano Engine",
       "options": {
-        "baseURL": "https://ark.cn-beijing.volces.com/api/coding/v3",
+        "baseURL": "http://192.168.55.32:8080/v1",
         "apiKey": "<ARK_API_KEY>"
       },
       "models": {
@@ -206,7 +206,7 @@ function parseArgs(argv) {
   const opts = {
     yes: false,
     nonInteractive: false,
-    apiKeyEnv: 'ARK_API_KEY',
+    apiKeyEnv: "ARK_API_KEY",
     skipInstall: false,
     dryRun: false,
     configPath: null,
@@ -219,36 +219,36 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '-h' || arg === '--help') opts.help = true;
-    else if (arg === '--version') opts.version = true;
-    else if (arg === '-y' || arg === '--yes') opts.yes = true;
-    else if (arg === '--non-interactive') {
+    if (arg === "-h" || arg === "--help") opts.help = true;
+    else if (arg === "--version") opts.version = true;
+    else if (arg === "-y" || arg === "--yes") opts.yes = true;
+    else if (arg === "--non-interactive") {
       opts.nonInteractive = true;
       opts.yes = true;
-    } else if (arg === '--api-key-env') {
+    } else if (arg === "--api-key-env") {
       i += 1;
-      if (!argv[i]) throw new Error('--api-key-env requires NAME');
+      if (!argv[i]) throw new Error("--api-key-env requires NAME");
       opts.apiKeyEnv = argv[i];
-    } else if (arg.startsWith('--api-key-env=')) {
-      opts.apiKeyEnv = arg.slice('--api-key-env='.length);
-    } else if (arg === '--skip-install') opts.skipInstall = true;
-    else if (arg === '--dry-run') {
+    } else if (arg.startsWith("--api-key-env=")) {
+      opts.apiKeyEnv = arg.slice("--api-key-env=".length);
+    } else if (arg === "--skip-install") opts.skipInstall = true;
+    else if (arg === "--dry-run") {
       opts.dryRun = true;
       opts.skipInstall = true;
-    } else if (arg === '--config-path') {
+    } else if (arg === "--config-path") {
       i += 1;
-      if (!argv[i]) throw new Error('--config-path requires PATH');
+      if (!argv[i]) throw new Error("--config-path requires PATH");
       opts.configPath = argv[i];
-    } else if (arg.startsWith('--config-path=')) {
-      opts.configPath = arg.slice('--config-path='.length);
-    } else if (arg === '--verbose') opts.verbose = true;
-    else if (arg === '--quiet') opts.quiet = true;
+    } else if (arg.startsWith("--config-path=")) {
+      opts.configPath = arg.slice("--config-path=".length);
+    } else if (arg === "--verbose") opts.verbose = true;
+    else if (arg === "--quiet") opts.quiet = true;
     else throw new Error(`Unknown option: ${arg}`);
   }
 
   if (opts.verbose && opts.quiet) {
     opts.quiet = false;
-    opts.warnings.push('--quiet ignored because --verbose was also provided');
+    opts.warnings.push("--quiet ignored because --verbose was also provided");
   }
 
   if (opts.nonInteractive) opts.yes = true;
@@ -258,11 +258,13 @@ function parseArgs(argv) {
 }
 
 function validateApiKey(value) {
-  const key = String(value || '').trim();
-  if (!key) return { ok: false, reason: 'API key 不能为空。' };
-  if (key.includes('<') || key.includes('>')) return { ok: false, reason: 'API key 不能包含尖括号。' };
-  if (key === '<ARK_API_KEY>') return { ok: false, reason: 'API key 不能是模板占位符。' };
-  if (key.length < 8) return { ok: false, reason: 'API key 长度过短。' };
+  const key = String(value || "").trim();
+  if (!key) return { ok: false, reason: "API key 不能为空。" };
+  if (key.includes("<") || key.includes(">"))
+    return { ok: false, reason: "API key 不能包含尖括号。" };
+  if (key === "<ARK_API_KEY>")
+    return { ok: false, reason: "API key 不能是模板占位符。" };
+  if (key.length < 8) return { ok: false, reason: "API key 长度过短。" };
   return { ok: true, value: key };
 }
 
@@ -271,29 +273,36 @@ function deepClone(value) {
 }
 
 function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function mergeConfig(existingConfig, templateConfig, apiKey) {
   const existing = isObject(existingConfig) ? existingConfig : {};
   const template = templateConfig;
-  const templateProvider = template.provider['volcengine-plan'];
-  const existingProviderRoot = isObject(existing.provider) ? existing.provider : {};
-  const existingVolcengine = isObject(existingProviderRoot['volcengine-plan'])
-    ? existingProviderRoot['volcengine-plan']
+  const templateProvider = template.provider["volcengine-plan"];
+  const existingProviderRoot = isObject(existing.provider)
+    ? existing.provider
+    : {};
+  const existingVolcengine = isObject(existingProviderRoot["volcengine-plan"])
+    ? existingProviderRoot["volcengine-plan"]
     : {};
 
   const provider = {};
   for (const key of Object.keys(existingProviderRoot)) {
-    if (key !== 'volcengine-plan') provider[key] = deepClone(existingProviderRoot[key]);
+    if (key !== "volcengine-plan")
+      provider[key] = deepClone(existingProviderRoot[key]);
   }
 
   const volcengine = {};
   volcengine.npm = deepClone(templateProvider.npm);
   volcengine.name = deepClone(templateProvider.name);
   volcengine.options = {
-    ...(isObject(templateProvider.options) ? deepClone(templateProvider.options) : {}),
-    ...(isObject(existingVolcengine.options) ? deepClone(existingVolcengine.options) : {}),
+    ...(isObject(templateProvider.options)
+      ? deepClone(templateProvider.options)
+      : {}),
+    ...(isObject(existingVolcengine.options)
+      ? deepClone(existingVolcengine.options)
+      : {}),
   };
   for (const key of Object.keys(templateProvider.options || {})) {
     volcengine.options[key] = deepClone(templateProvider.options[key]);
@@ -305,22 +314,33 @@ function mergeConfig(existingConfig, templateConfig, apiKey) {
       volcengine[key] = deepClone(existingVolcengine[key]);
     }
   }
-  provider['volcengine-plan'] = volcengine;
+  provider["volcengine-plan"] = volcengine;
 
   const result = {};
   for (const key of Object.keys(existing)) {
-    if (key === 'provider') result.provider = provider;
-    else if (key === 'model' && (typeof existing.model !== 'string' || existing.model === '')) result.model = deepClone(template.model);
+    if (key === "provider") result.provider = provider;
+    else if (
+      key === "model" &&
+      (typeof existing.model !== "string" || existing.model === "")
+    )
+      result.model = deepClone(template.model);
     else result[key] = deepClone(existing[key]);
   }
 
-  if (!Object.prototype.hasOwnProperty.call(result, '$schema') && template.$schema !== undefined) {
+  if (
+    !Object.prototype.hasOwnProperty.call(result, "$schema") &&
+    template.$schema !== undefined
+  ) {
     result.$schema = deepClone(template.$schema);
   }
-  if (!Object.prototype.hasOwnProperty.call(result, 'model') || typeof result.model !== 'string' || result.model === '') {
+  if (
+    !Object.prototype.hasOwnProperty.call(result, "model") ||
+    typeof result.model !== "string" ||
+    result.model === ""
+  ) {
     result.model = deepClone(template.model);
   }
-  if (!Object.prototype.hasOwnProperty.call(result, 'provider')) {
+  if (!Object.prototype.hasOwnProperty.call(result, "provider")) {
     result.provider = provider;
   }
 
@@ -329,9 +349,12 @@ function mergeConfig(existingConfig, templateConfig, apiKey) {
 
 function maskApiKey(config) {
   const cloned = deepClone(config);
-  const options = cloned?.provider?.['volcengine-plan']?.options;
-  if (isObject(options) && Object.prototype.hasOwnProperty.call(options, 'apiKey')) {
-    options.apiKey = '***';
+  const options = cloned?.provider?.["volcengine-plan"]?.options;
+  if (
+    isObject(options) &&
+    Object.prototype.hasOwnProperty.call(options, "apiKey")
+  ) {
+    options.apiKey = "***";
   }
   return cloned;
 }
@@ -345,12 +368,12 @@ function resolveTargetPath(opts = {}, env = process.env) {
   if (opts.configPath) {
     target = path.resolve(process.cwd(), opts.configPath);
   } else if (env.XDG_CONFIG_HOME && String(env.XDG_CONFIG_HOME).trim()) {
-    target = path.join(env.XDG_CONFIG_HOME, 'opencode', 'opencode.json');
-  } else if (process.platform === 'win32') {
+    target = path.join(env.XDG_CONFIG_HOME, "opencode", "opencode.json");
+  } else if (process.platform === "win32") {
     const home = env.USERPROFILE || os.homedir();
-    target = path.join(home, '.config', 'opencode', 'opencode.json');
+    target = path.join(home, ".config", "opencode", "opencode.json");
   } else {
-    target = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
+    target = path.join(os.homedir(), ".config", "opencode", "opencode.json");
   }
 
   const exists = fs.existsSync(target);
@@ -365,19 +388,21 @@ function resolveTargetPath(opts = {}, env = process.env) {
 }
 
 function stripBom(text) {
-  return text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 }
 
 function loadExistingConfig(realTarget) {
   if (!fs.existsSync(realTarget)) return null;
   const stat = fs.statSync(realTarget);
   if (stat.size === 0) return null;
-  const raw = stripBom(fs.readFileSync(realTarget, 'utf8'));
+  const raw = stripBom(fs.readFileSync(realTarget, "utf8"));
   try {
     return JSON.parse(raw);
   } catch (error) {
-    const err = new Error(`用户已有配置不是合法 JSON：${sanitizePathForLog(realTarget)}`);
-    err.code = 'USER_CONFIG_JSON';
+    const err = new Error(
+      `用户已有配置不是合法 JSON：${sanitizePathForLog(realTarget)}`,
+    );
+    err.code = "USER_CONFIG_JSON";
     err.cause = error;
     throw err;
   }
@@ -385,7 +410,7 @@ function loadExistingConfig(realTarget) {
 
 function timestamp() {
   const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
@@ -397,9 +422,12 @@ function backupExisting(realTarget) {
     fs.copyFileSync(realTarget, backup, fs.constants.COPYFILE_EXCL);
     return backup;
   } catch (error) {
-    if (error.code !== 'EEXIST') throw error;
+    if (error.code !== "EEXIST") throw error;
   }
-  backup = path.join(dir, `${base}.bak-${timestamp()}-${crypto.randomBytes(3).toString('hex')}`);
+  backup = path.join(
+    dir,
+    `${base}.bak-${timestamp()}-${crypto.randomBytes(3).toString("hex")}`,
+  );
   fs.copyFileSync(realTarget, backup, fs.constants.COPYFILE_EXCL);
   return backup;
 }
@@ -407,59 +435,73 @@ function backupExisting(realTarget) {
 function atomicWrite(realTarget, content) {
   const dir = path.dirname(realTarget);
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const tmp = path.join(dir, `${path.basename(realTarget)}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);
+  const tmp = path.join(
+    dir,
+    `${path.basename(realTarget)}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`,
+  );
   activeTempFile = tmp;
   let fd = null;
   try {
-    fd = fs.openSync(tmp, 'w', 0o600);
-    fs.writeFileSync(fd, content, 'utf8');
+    fd = fs.openSync(tmp, "w", 0o600);
+    fs.writeFileSync(fd, content, "utf8");
     fs.fsyncSync(fd);
     fs.closeSync(fd);
     fd = null;
     fs.renameSync(tmp, realTarget);
-    if (process.platform !== 'win32') fs.chmodSync(realTarget, 0o600);
+    if (process.platform !== "win32") fs.chmodSync(realTarget, 0o600);
     activeTempFile = null;
   } catch (error) {
     if (fd !== null) {
-      try { fs.closeSync(fd); } catch (_) {}
+      try {
+        fs.closeSync(fd);
+      } catch (_) {}
     }
-    try { fs.unlinkSync(tmp); } catch (_) {}
+    try {
+      fs.unlinkSync(tmp);
+    } catch (_) {}
     activeTempFile = null;
     throw error;
   }
 }
 
 function sanitizePathForLog(value) {
-  return path.normalize(String(value)).replace(/[\x00-\x1F\x7F]/g, '');
+  return path.normalize(String(value)).replace(/[\x00-\x1F\x7F]/g, "");
 }
 
 function loadTemplate(scriptDir) {
-  const templatePath = path.join(scriptDir, 'example.config.json');
+  const templatePath = path.join(scriptDir, "example.config.json");
   let parsed;
   try {
     const raw = fs.existsSync(templatePath)
-      ? fs.readFileSync(templatePath, 'utf8')
+      ? fs.readFileSync(templatePath, "utf8")
       : EMBEDDED_TEMPLATE_JSON;
     parsed = JSON.parse(stripBom(raw));
   } catch (error) {
-    const err = new Error(`无法读取或解析模板：${sanitizePathForLog(templatePath)}`);
-    err.code = 'TEMPLATE';
+    const err = new Error(
+      `无法读取或解析模板：${sanitizePathForLog(templatePath)}`,
+    );
+    err.code = "TEMPLATE";
     err.cause = error;
     throw err;
   }
-  const apiKey = parsed?.provider?.['volcengine-plan']?.options?.apiKey;
-  if (typeof apiKey !== 'string') {
-    const err = new Error('模板缺少 provider["volcengine-plan"].options.apiKey。');
-    err.code = 'TEMPLATE';
+  const apiKey = parsed?.provider?.["volcengine-plan"]?.options?.apiKey;
+  if (typeof apiKey !== "string") {
+    const err = new Error(
+      '模板缺少 provider["volcengine-plan"].options.apiKey。',
+    );
+    err.code = "TEMPLATE";
     throw err;
   }
   return parsed;
 }
 
 function checkNode() {
-  const major = Number(process.versions.node.split('.')[0]);
+  const major = Number(process.versions.node.split(".")[0]);
   if (!Number.isFinite(major) || major < 22) {
-    throw Object.assign(new Error(`需要 Node.js 22+，当前版本是 ${process.versions.node}。`), { exitCode: EXIT.RUNTIME });
+    throw Object.assign(
+      new Error(`需要 Node.js 22+，当前版本是 ${process.versions.node}。`),
+      { exitCode: EXIT.RUNTIME },
+    );
   }
 }
 
@@ -483,8 +525,8 @@ Options:
 `;
 }
 
-function log(opts, message, level = 'info') {
-  if (opts.quiet && level !== 'error') return;
+function log(opts, message, level = "info") {
+  if (opts.quiet && level !== "error") return;
   process.stderr.write(`${message}\n`);
 }
 
@@ -493,11 +535,12 @@ function debug(opts, message) {
 }
 
 function findOnPath(command, env = process.env) {
-  const pathValue = env.PATH || env.Path || env.path || '';
+  const pathValue = env.PATH || env.Path || env.path || "";
   const dirs = pathValue.split(path.delimiter).filter(Boolean);
-  const names = process.platform === 'win32'
-    ? [command, `${command}.cmd`, `${command}.exe`, `${command}.bat`]
-    : [command];
+  const names =
+    process.platform === "win32"
+      ? [command, `${command}.cmd`, `${command}.exe`, `${command}.bat`]
+      : [command];
   for (const dir of dirs) {
     for (const name of names) {
       const candidate = path.join(dir, name);
@@ -512,7 +555,10 @@ function findOnPath(command, env = process.env) {
 
 function promptYesNo(question) {
   return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
     rl.question(`${question} [y/N] `, (answer) => {
       rl.close();
       resolve(/^y(es)?$/i.test(String(answer).trim()));
@@ -522,41 +568,54 @@ function promptYesNo(question) {
 
 function runNpmInstall() {
   return new Promise((resolve) => {
-    const child = spawn('npm', ['install', '-g', 'opencode-ai'], {
-      stdio: 'inherit',
-      shell: process.platform === 'win32',
+    const child = spawn("npm", ["install", "-g", "opencode-ai"], {
+      stdio: "inherit",
+      shell: process.platform === "win32",
     });
-    child.on('error', () => resolve(false));
-    child.on('close', (code) => resolve(code === 0));
+    child.on("error", () => resolve(false));
+    child.on("close", (code) => resolve(code === 0));
   });
 }
 
 async function ensureOpencode(opts) {
-  if (findOnPath('opencode')) {
-    debug(opts, 'detected opencode on PATH');
+  if (findOnPath("opencode")) {
+    debug(opts, "detected opencode on PATH");
     return;
   }
   if (opts.skipInstall) {
-    log(opts, '未检测到 OpenCode；已跳过安装。可手动运行：npm install -g opencode-ai');
+    log(
+      opts,
+      "未检测到 OpenCode；已跳过安装。可手动运行：npm install -g opencode-ai",
+    );
     return;
   }
 
   let shouldInstall = opts.yes;
   if (!shouldInstall) {
-    shouldInstall = await promptYesNo('未检测到 OpenCode，是否现在安装？将执行：npm install -g opencode-ai');
+    shouldInstall = await promptYesNo(
+      "未检测到 OpenCode，是否现在安装？将执行：npm install -g opencode-ai",
+    );
   }
   if (!shouldInstall) {
-    log(opts, '已跳过安装。可手动运行：npm install -g opencode-ai');
+    log(opts, "已跳过安装。可手动运行：npm install -g opencode-ai");
     return;
   }
 
-  if (!findOnPath('npm')) {
-    throw Object.assign(new Error('未检测到 npm，请安装 Node.js/npm 后重试。'), { exitCode: EXIT.RUNTIME });
+  if (!findOnPath("npm")) {
+    throw Object.assign(
+      new Error("未检测到 npm，请安装 Node.js/npm 后重试。"),
+      { exitCode: EXIT.RUNTIME },
+    );
   }
-  log(opts, '正在安装 OpenCode，请稍候...');
+  log(opts, "正在安装 OpenCode，请稍候...");
   const ok = await runNpmInstall();
   if (!ok) {
-    throw Object.assign(new Error('OpenCode 安装失败。请检查权限、代理或 npm 全局目录 PATH，并手动重试：npm install -g opencode-ai'), { exitCode: EXIT.INSTALL });
+    throw Object.assign(
+      new Error(
+        "OpenCode 安装失败。请检查权限、代理或 npm 全局目录 PATH，并手动重试：npm install -g opencode-ai",
+      ),
+      { exitCode: EXIT.INSTALL },
+    );
   }
 }
 
@@ -565,34 +624,46 @@ function readApiKeyFromEnv(opts) {
   if (!raw) return null;
   const result = validateApiKey(raw);
   if (!result.ok) {
-    throw Object.assign(new Error(`环境变量 ${opts.apiKeyEnv} 中的 API key 无效：${result.reason}`), { exitCode: EXIT.API_KEY });
+    throw Object.assign(
+      new Error(
+        `环境变量 ${opts.apiKeyEnv} 中的 API key 无效：${result.reason}`,
+      ),
+      { exitCode: EXIT.API_KEY },
+    );
   }
   return result.value;
 }
 
 function apiKeyPromptText() {
   return [
-    '',
-    '请输入你的火山订阅专属 API key。',
-    '安全提示：输入内容不会显示在终端中，这是正常现象。',
-    '粘贴或输入完成后，请按回车继续。',
-    'API key：',
-  ].join('\n');
+    "",
+    "请输入你的火山订阅专属 API key。",
+    "安全提示：输入内容不会显示在终端中，这是正常现象。",
+    "粘贴或输入完成后，请按回车继续。",
+    "API key：",
+  ].join("\n");
 }
 
 function promptApiKey() {
   if (!process.stdin.isTTY) {
-    throw Object.assign(new Error('当前输入不是 TTY，请通过 ARK_API_KEY 环境变量提供 API key。'), { exitCode: EXIT.API_KEY });
+    throw Object.assign(
+      new Error("当前输入不是 TTY，请通过 ARK_API_KEY 环境变量提供 API key。"),
+      { exitCode: EXIT.API_KEY },
+    );
   }
 
   return new Promise((resolve, reject) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stderr, terminal: true });
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+      terminal: true,
+    });
     const originalWrite = rl._writeToOutput;
     rl._writeToOutput = function writeMasked() {};
     const ask = () => {
       process.stderr.write(apiKeyPromptText());
-      rl.question('', (answer) => {
-        process.stderr.write('\n');
+      rl.question("", (answer) => {
+        process.stderr.write("\n");
         const result = validateApiKey(answer);
         if (result.ok) {
           rl._writeToOutput = originalWrite;
@@ -604,10 +675,10 @@ function promptApiKey() {
         ask();
       });
     };
-    rl.on('SIGINT', () => {
+    rl.on("SIGINT", () => {
       rl._writeToOutput = originalWrite;
       rl.close();
-      reject(Object.assign(new Error('用户取消。'), { exitCode: EXIT.CANCEL }));
+      reject(Object.assign(new Error("用户取消。"), { exitCode: EXIT.CANCEL }));
     });
     ask();
   });
@@ -617,7 +688,10 @@ async function resolveApiKey(opts) {
   const envKey = readApiKeyFromEnv(opts);
   if (envKey) return envKey;
   if (opts.nonInteractive) {
-    throw Object.assign(new Error(`非交互模式需要通过 ${opts.apiKeyEnv} 提供 API key。`), { exitCode: EXIT.API_KEY });
+    throw Object.assign(
+      new Error(`非交互模式需要通过 ${opts.apiKeyEnv} 提供 API key。`),
+      { exitCode: EXIT.API_KEY },
+    );
   }
   return promptApiKey();
 }
@@ -625,13 +699,15 @@ async function resolveApiKey(opts) {
 function installSignalHandlers() {
   const handler = () => {
     if (activeTempFile) {
-      try { fs.unlinkSync(activeTempFile); } catch (_) {}
+      try {
+        fs.unlinkSync(activeTempFile);
+      } catch (_) {}
     }
-    process.stderr.write('\n用户取消。\n');
+    process.stderr.write("\n用户取消。\n");
     process.exit(EXIT.CANCEL);
   };
-  process.once('SIGINT', handler);
-  process.once('SIGTERM', handler);
+  process.once("SIGINT", handler);
+  process.once("SIGTERM", handler);
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -652,7 +728,10 @@ async function main(argv = process.argv.slice(2)) {
 
     const template = loadTemplate(__dirname);
     const targetInfo = resolveTargetPath(opts);
-    debug(opts, `target=${sanitizePathForLog(targetInfo.target)} exists=${targetInfo.exists} symlink=${targetInfo.isSymlink}`);
+    debug(
+      opts,
+      `target=${sanitizePathForLog(targetInfo.target)} exists=${targetInfo.exists} symlink=${targetInfo.isSymlink}`,
+    );
     const apiKey = await resolveApiKey(opts);
     const existing = loadExistingConfig(targetInfo.realTarget);
     await ensureOpencode(opts);
@@ -664,19 +743,29 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     let backupPath = null;
-    if (targetInfo.exists && fs.existsSync(targetInfo.realTarget) && fs.statSync(targetInfo.realTarget).size > 0) {
+    if (
+      targetInfo.exists &&
+      fs.existsSync(targetInfo.realTarget) &&
+      fs.statSync(targetInfo.realTarget).size > 0
+    ) {
       backupPath = backupExisting(targetInfo.realTarget);
     }
     atomicWrite(targetInfo.realTarget, serialize(merged));
     if (!opts.quiet) {
       log(opts, `配置已写入：${sanitizePathForLog(targetInfo.target)}`);
-      if (backupPath) log(opts, `已创建备份：${sanitizePathForLog(backupPath)}`);
+      if (backupPath)
+        log(opts, `已创建备份：${sanitizePathForLog(backupPath)}`);
     }
     process.stdout.write(`${targetInfo.target}\n`);
     return 0;
   } catch (error) {
-    const exitCode = error.exitCode
-      || (error.code === 'TEMPLATE' ? EXIT.TEMPLATE : error.code === 'USER_CONFIG_JSON' ? EXIT.USER_CONFIG : EXIT.GENERAL);
+    const exitCode =
+      error.exitCode ||
+      (error.code === "TEMPLATE"
+        ? EXIT.TEMPLATE
+        : error.code === "USER_CONFIG_JSON"
+          ? EXIT.USER_CONFIG
+          : EXIT.GENERAL);
     if (opts?.verbose && error.stack) {
       process.stderr.write(`${error.stack}\n`);
     } else {
